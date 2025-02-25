@@ -25,7 +25,6 @@ struct ChatView: View {
                             
                             if viewModel.isLoading {
                                 TypingIndicator()
-                                    .padding(.leading)
                                     .id("typingIndicator")
                             }
                             
@@ -162,7 +161,7 @@ struct TypingIndicator: View {
                     .animation(
                         Animation.easeInOut(duration: 0.6)
                             .repeatForever()
-                            .delay(Double(index) * 0.2),
+                            .delay(Double(index) * 0.3),
                         value: animationOffset
                     )
             }
