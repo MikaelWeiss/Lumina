@@ -15,16 +15,22 @@ class ChatViewModel {
     private let chatService: ChatServiceProtocol
     
     var conversations: [Conversation] = []
-    var currentConversation: Conversation?
+    var currentConversation: Conversation
     var messageText: String = ""
-    var isLoading: Bool = false
+    var inturrupted = false
+    var isLoading: Bool {
+        sendMessageTask != nil
+    }
     var errorMessage: String?
+    private var sendMessageTask: Task<Void, Error>?
     
     // MARK: - Initialization
     
     init(chatService: ChatServiceProtocol) {
         self.chatService = chatService
+        currentConversation = Conversation()
         loadConversations()
+        currentConversation = conversations.last ?? Conversation()
     }
     
     // MARK: - Conversation Management
@@ -54,10 +60,8 @@ class ChatViewModel {
     }
     
     func updateConversationTitle(newTitle: String) {
-        guard let conversation = currentConversation else { return }
-        
         do {
-            currentConversation = try chatService.updateConversationTitle(conversation, newTitle: newTitle)
+            currentConversation = try chatService.updateConversationTitle(currentConversation, newTitle: newTitle)
             loadConversations()
         } catch {
             errorMessage = "Failed to update conversation title: \(error.localizedDescription)"
@@ -65,11 +69,9 @@ class ChatViewModel {
     }
     
     func deleteCurrentConversation() {
-        guard let conversation = currentConversation else { return }
-        
         do {
-            try chatService.deleteConversation(conversation)
-            currentConversation = nil
+            try chatService.deleteConversation(currentConversation)
+            currentConversation = Conversation()
             loadConversations()
         } catch {
             errorMessage = "Failed to delete conversation: \(error.localizedDescription)"
@@ -78,27 +80,35 @@ class ChatViewModel {
     
     // MARK: - Message Handling
     
-    func sendMessage() async {
-        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              var conversation = currentConversation else { return }
+    func didTapSendOrStop() async {
+        if let sendMessageTask {
+            sendMessageTask.cancel()
+            inturrupted = true
+            return
+        }
+        inturrupted = false
+        guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
         let messageToSend = messageText
         messageText = ""
-        isLoading = true
         errorMessage = nil
         let userMessage = Message(role: .user, content: messageToSend)
+        currentConversation.messages.append(userMessage)
         
-        do {
-            let assistantResponse = try await chatService.sendMessage(messageToSend, in: conversation)
-            conversation.messages.append(userMessage)
-            conversation.messages.append(assistantResponse)
-            try chatService.saveConversation(conversation)
-            currentConversation = conversation
-        } catch {
-            errorMessage = "Failed to send message: \(error.localizedDescription)"
+        sendMessageTask = Task {
+            defer {
+                sendMessageTask = nil
+            }
+            do {
+                let assistantResponse = try await chatService.sendMessage(messageToSend, in: currentConversation)
+                currentConversation.messages.append(assistantResponse)
+                try chatService.saveConversation(currentConversation)
+            } catch {
+                if !Task.isCancelled {
+                    errorMessage = "Failed to send message: \(error.localizedDescription)"
+                }
+            }
         }
-        
-        isLoading = false
     }
     
     // MARK: - API Key Validation

@@ -18,10 +18,8 @@ struct ChatView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            if let conversation = viewModel.currentConversation {
-                                ForEach(conversation.messages) { message in
-                                    MessageBubble(message: message)
-                                }
+                            ForEach(viewModel.currentConversation.messages) { message in
+                                MessageBubble(message: message)
                             }
                             
                             if viewModel.isLoading {
@@ -29,13 +27,19 @@ struct ChatView: View {
                                     .padding(.leading)
                                     .id("typingIndicator")
                             }
+                            
+                            if viewModel.inturrupted, !viewModel.currentConversation.messages.isEmpty {
+                                Text("Lumina was inturrupted")
+                                    .font(.subheadline)
+                                    .padding()
+                            }
                         }
                         .padding(.horizontal)
                         .padding(.top, 10)
                         .padding(.bottom, 8)
                     }
-                    .onChange(of: viewModel.currentConversation?.messages.count) { _, _ in
-                        if let lastMessage = viewModel.currentConversation?.messages.last {
+                    .onChange(of: viewModel.currentConversation.messages.count) { _, _ in
+                        if let lastMessage = viewModel.currentConversation.messages.last {
                             withAnimation {
                                 proxy.scrollTo(lastMessage.id, anchor: .bottom)
                             }
@@ -48,11 +52,18 @@ struct ChatView: View {
                             }
                         }
                     }
+                    .onChange(of: viewModel.currentConversation.id) { _, _ in
+                        if let lastMessage = viewModel.currentConversation.messages.last {
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
+                        }
+                    }
                 }
                 .background(Color(UIColor.systemBackground))
                 .overlay(
                     Group {
-                        if let conversation = viewModel.currentConversation, conversation.messages.isEmpty {
+                        if viewModel.currentConversation.messages.isEmpty {
                             Text("How can I help you today?")
                                 .font(.largeTitle)
                                 .fontDesign(.rounded)
@@ -64,18 +75,11 @@ struct ChatView: View {
                 Spacer()
                 
                 // Input area
-                ChatInputView(
-                    text: $viewModel.messageText,
-                    onSend: sendMessage)
+                ChatInputView(messageText: $viewModel.messageText,
+                              messageLoading: viewModel.isLoading,
+                              onSend: sendMessage)
             }
-            .onAppear {
-                if viewModel.currentConversation == nil && !viewModel.conversations.isEmpty {
-                    viewModel.selectConversation(viewModel.conversations[0])
-                } else if viewModel.currentConversation == nil {
-                    viewModel.createNewConversation()
-                }
-            }
-            .navigationTitle(viewModel.currentConversation?.title ?? "Lumina")
+            .navigationTitle(viewModel.currentConversation.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -98,7 +102,7 @@ struct ChatView: View {
     
     private func sendMessage() {
         Task {
-            await viewModel.sendMessage()
+            await viewModel.didTapSendOrStop()
         }
     }
 }
@@ -173,28 +177,6 @@ struct TypingIndicator: View {
     
     private func animationOffset(for index: Int) -> Double {
         return animationOffset * -5.0
-    }
-}
-
-struct ChatInputView: View {
-    @Binding var text: String
-    var onSend: () -> Void
-    
-    var body: some View {
-        ZStack {
-            // Text input field with dynamic height
-            TextField("Reply to Lumina", text: $text, axis: .vertical)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .submitLabel(.send)
-                .foregroundColor(.primary)
-                .onSubmit(onSend)
-                .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 20))
-        }
-        .frame(minHeight: 40)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(Color(UIColor.systemBackground))
     }
 }
 
