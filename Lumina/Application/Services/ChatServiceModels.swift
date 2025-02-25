@@ -28,7 +28,6 @@ struct Message: Identifiable, Codable {
 enum MessageRole: String, Codable {
     case user
     case assistant
-    case system
 }
 
 struct Conversation: Identifiable, Codable {

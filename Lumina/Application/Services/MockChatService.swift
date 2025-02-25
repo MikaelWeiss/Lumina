@@ -31,11 +31,6 @@ class MockChatService: ChatServiceProtocol {
         // Simulate network delay
         try await Task.sleep(for: .seconds(mockDelay))
         
-        // Find the conversation in our array
-        guard let index = conversations.firstIndex(where: { $0.id == conversation.id }) else {
-            throw ChatError.conversationNotFound
-        }
-        
         // Create a mock response based on the message content
         let responseContent: String
         if message.lowercased().contains("hello") || message.lowercased().contains("hi") {

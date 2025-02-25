@@ -42,11 +42,7 @@ class ClaudeAPIService: ChatServiceProtocol {
         // Convert conversation messages to Claude API format
         var conversationMessages = conversation.messages
         conversationMessages.append(Message(role: .user, content: message))
-        
-        // Filter out system messages from the messages array - they belong in the system parameter
-        let messages = conversationMessages
-            .filter { $0.role != .system }
-            .map { ["role": $0.role.rawValue, "content": $0.content] }
+        let messages = conversationMessages.map { ["role": $0.role.rawValue, "content": $0.content] }
         
         // Prepare request body
         let requestBody: [String: Any] = [
@@ -85,12 +81,7 @@ class ClaudeAPIService: ChatServiceProtocol {
     }
     
     func createConversation(title: String) -> Conversation {
-        var conversation = Conversation(title: title)
-        
-        let systemMessage = Message(role: .system, content: "Welcome to Lumi!")
-        conversation.messages.append(systemMessage)
-        
-        return conversation
+        Conversation(title: title)
     }
     
     func saveConversation(_ conversation: Conversation) throws {
@@ -135,13 +126,13 @@ class ClaudeAPIService: ChatServiceProtocol {
     func validateAPIKey() async throws -> Bool {
         var request = URLRequest(url: baseURL)
         request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.addValue("anthropic-version=2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.addValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.addValue("application/json", forHTTPHeaderField: "content-type")
         
-        // Minimal request to check API key validity
+        // Prepare request body
         let requestBody: [String: Any] = [
-            "model": "claude-3-opus-20240229",
+            "model": "claude-3-5-haiku-20241022",
             "messages": [["role": "user", "content": "Hello"]],
             "max_tokens": 1
         ]

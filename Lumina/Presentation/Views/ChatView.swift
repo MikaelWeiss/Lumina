@@ -9,81 +9,91 @@ import SwiftUI
 
 struct ChatView: View {
     @State private var viewModel = ChatViewModel(chatService: ClaudeAPIService())
-    @FocusState private var isInputFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Messages list
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        if let conversation = viewModel.currentConversation {
-                            ForEach(conversation.messages) { message in
-                                MessageBubble(message: message)
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Messages list
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            if let conversation = viewModel.currentConversation {
+                                ForEach(conversation.messages) { message in
+                                    MessageBubble(message: message)
+                                }
+                            }
+                            
+                            if viewModel.isLoading {
+                                TypingIndicator()
+                                    .padding(.leading)
+                                    .id("typingIndicator")
                             }
                         }
-                        
+                        .padding(.horizontal)
+                        .padding(.top, 10)
+                        .padding(.bottom, 8)
+                    }
+                    .onChange(of: viewModel.currentConversation?.messages.count) { _, _ in
+                        if let lastMessage = viewModel.currentConversation?.messages.last {
+                            withAnimation {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                    .onChange(of: viewModel.isLoading) { _, _ in
                         if viewModel.isLoading {
-                            TypingIndicator()
-                                .padding(.leading)
-                                .id("typingIndicator")
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 10)
-                    .padding(.bottom, 8)
-                }
-                .onChange(of: viewModel.currentConversation?.messages.count) { _, _ in
-                    if let lastMessage = viewModel.currentConversation?.messages.last {
-                        withAnimation {
-                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            withAnimation {
+                                proxy.scrollTo("typingIndicator", anchor: .bottom)
+                            }
                         }
                     }
                 }
-                .onChange(of: viewModel.isLoading) { _, _ in
-                    if viewModel.isLoading {
-                        withAnimation {
-                            proxy.scrollTo("typingIndicator", anchor: .bottom)
+                .background(Color(UIColor.systemBackground))
+                .overlay(
+                    Group {
+                        if let conversation = viewModel.currentConversation, conversation.messages.isEmpty {
+                            Text("How can I help you today?")
+                                .font(.largeTitle)
+                                .fontDesign(.rounded)
+                                .padding()
                         }
                     }
-                }
+                )
+                
+                Spacer()
+                
+                // Input area
+                ChatInputView(
+                    text: $viewModel.messageText,
+                    onSend: sendMessage)
             }
-            .background(Color(UIColor.systemBackground))
-            
-            Spacer()
-            
-            // Input area
-            ChatInputView(
-                text: $viewModel.messageText,
-                isInputFocused: _isInputFocused,
-                onSend: sendMessage)
-        }
-        .onAppear {
-            if viewModel.currentConversation == nil && !viewModel.conversations.isEmpty {
-                viewModel.selectConversation(viewModel.conversations[0])
-            } else if viewModel.currentConversation == nil {
-                viewModel.createNewConversation()
-            }
-        }
-        .navigationTitle(viewModel.currentConversation?.title ?? "Lumina")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("add", systemImage: "plus") {
+            .onAppear {
+                if viewModel.currentConversation == nil && !viewModel.conversations.isEmpty {
+                    viewModel.selectConversation(viewModel.conversations[0])
+                } else if viewModel.currentConversation == nil {
                     viewModel.createNewConversation()
                 }
             }
+            .navigationTitle(viewModel.currentConversation?.title ?? "Lumina")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("add", systemImage: "plus") {
+                        viewModel.createNewConversation()
+                    }
+                }
+            }
+            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil), actions: {
+                Button("OK") {
+                    viewModel.errorMessage = nil
+                }
+            }, message: {
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                }
+            })
         }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil), actions: {
-            Button("OK") {
-                viewModel.errorMessage = nil
-            }
-        }, message: {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-            }
-        })
     }
     
     private func sendMessage() {
@@ -168,7 +178,6 @@ struct TypingIndicator: View {
 
 struct ChatInputView: View {
     @Binding var text: String
-    @FocusState var isInputFocused: Bool
     var onSend: () -> Void
     
     var body: some View {
@@ -177,7 +186,6 @@ struct ChatInputView: View {
             TextField("Reply to Lumina", text: $text, axis: .vertical)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .focused($isInputFocused)
                 .submitLabel(.send)
                 .foregroundColor(.primary)
                 .onSubmit(onSend)
