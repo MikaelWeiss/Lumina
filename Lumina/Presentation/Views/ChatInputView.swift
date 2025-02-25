@@ -16,7 +16,7 @@ struct ChatInputView: View {
     var body: some View {
         VStack(spacing: 12) {
             // Text input field
-            TextField("Chat with Lumina", text: $messageText)
+            TextField("Chat with Lumina", text: $messageText, axis: .vertical)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 12)
                 .focused($isFocused)

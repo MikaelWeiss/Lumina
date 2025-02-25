@@ -40,8 +40,7 @@ class ClaudeAPIService: ChatServiceProtocol {
         request.addValue("application/json", forHTTPHeaderField: "content-type")
         
         // Convert conversation messages to Claude API format
-        var conversationMessages = conversation.messages
-        let messages = conversationMessages.map { ["role": $0.role.rawValue, "content": $0.content] }
+        let messages = conversation.messages.map { ["role": $0.role.rawValue, "content": $0.content] }
         
         // Prepare request body
         let requestBody: [String: Any] = [
