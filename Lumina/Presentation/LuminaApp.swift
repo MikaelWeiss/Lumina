@@ -11,7 +11,7 @@ import SwiftUI
 struct LuminaApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ChatView()
         }
     }
 }
