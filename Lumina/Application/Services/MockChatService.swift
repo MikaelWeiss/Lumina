@@ -33,7 +33,7 @@ class MockChatService: ChatServiceProtocol {
         
         // Find the conversation in our array
         guard let index = conversations.firstIndex(where: { $0.id == conversation.id }) else {
-            throw NSError(domain: "MockChatService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Conversation not found"])
+            throw ChatError.conversationNotFound
         }
         
         // Create a mock response based on the message content
@@ -51,17 +51,11 @@ class MockChatService: ChatServiceProtocol {
         // Create the assistant message
         let assistantMessage = Message(id: UUID(), role: .assistant, content: responseContent, timestamp: Date())
         
-        // Update the conversation with both messages
-        conversations[index].messages.append(Message(id: UUID(), role: .user, content: message, timestamp: Date()))
-        conversations[index].messages.append(assistantMessage)
-        
         return assistantMessage
     }
     
-    func createConversation(title: String, systemPrompt: String?) -> Conversation {
-        let newConversation = Conversation(id: UUID(), title: title, messages: [])
-        conversations.append(newConversation)
-        return newConversation
+    func createConversation(title: String) -> Conversation {
+        Conversation(id: UUID(), title: title, messages: [])
     }
     
     func saveConversation(_ conversation: Conversation) throws {
@@ -73,7 +67,7 @@ class MockChatService: ChatServiceProtocol {
     }
     
     func loadConversations() throws -> [Conversation] {
-        return conversations
+        conversations
     }
     
     func deleteConversation(_ conversation: Conversation) throws {
@@ -82,7 +76,7 @@ class MockChatService: ChatServiceProtocol {
     
     func updateConversationTitle(_ conversation: Conversation, newTitle: String) throws -> Conversation {
         guard let index = conversations.firstIndex(where: { $0.id == conversation.id }) else {
-            throw NSError(domain: "MockChatService", code: 404, userInfo: [NSLocalizedDescriptionKey: "Conversation not found"])
+            throw ChatError.conversationNotFound
         }
         
         var updatedConversation = conversation

@@ -14,7 +14,7 @@ protocol ChatServiceProtocol {
     func sendMessage(_ message: String, in conversation: Conversation) async throws -> Message
     
     /// Create a new conversation
-    func createConversation(title: String, systemPrompt: String?) -> Conversation
+    func createConversation(title: String) -> Conversation
     
     /// Save a conversation
     func saveConversation(_ conversation: Conversation) throws

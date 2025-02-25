@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import OSLog
 
 @Observable
 class ChatViewModel {
@@ -36,8 +37,8 @@ class ChatViewModel {
         }
     }
     
-    func createNewConversation(title: String = "New Conversation", systemPrompt: String? = nil) {
-        let conversation = chatService.createConversation(title: title, systemPrompt: systemPrompt)
+    func createNewConversation(title: String = "New Conversation") {
+        let conversation = chatService.createConversation(title: title)
         currentConversation = conversation
         
         do {
@@ -79,16 +80,20 @@ class ChatViewModel {
     
     func sendMessage() async {
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              let conversation = currentConversation else { return }
+              var conversation = currentConversation else { return }
         
         let messageToSend = messageText
         messageText = ""
         isLoading = true
         errorMessage = nil
+        let userMessage = Message(role: .user, content: messageToSend)
         
         do {
-            let _ = try await chatService.sendMessage(messageToSend, in: conversation)
+            let assistantResponse = try await chatService.sendMessage(messageToSend, in: conversation)
+            conversation.messages.append(userMessage)
+            conversation.messages.append(assistantResponse)
             try chatService.saveConversation(conversation)
+            currentConversation = conversation
         } catch {
             errorMessage = "Failed to send message: \(error.localizedDescription)"
         }

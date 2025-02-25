@@ -6,61 +6,6 @@
 //
 
 import Foundation
-import Combine
-
-// MARK: - Models
-
-struct Message: Identifiable, Codable {
-    let id: UUID
-    let role: MessageRole
-    let content: String
-    let timestamp: Date
-    
-    init(id: UUID = UUID(), role: MessageRole, content: String, timestamp: Date = Date()) {
-        self.id = id
-        self.role = role
-        self.content = content
-        self.timestamp = timestamp
-    }
-    
-    var isUserMessage: Bool {
-        role == .user
-    }
-}
-
-enum MessageRole: String, Codable {
-    case user
-    case assistant
-    case system
-}
-
-struct Conversation: Identifiable, Codable {
-    let id: UUID
-    var title: String
-    var messages: [Message]
-    var createdAt: Date
-    var updatedAt: Date
-    
-    init(id: UUID = UUID(), title: String = "New Conversation", messages: [Message] = [], createdAt: Date = Date()) {
-        self.id = id
-        self.title = title
-        self.messages = messages
-        self.createdAt = createdAt
-        self.updatedAt = createdAt
-    }
-}
-
-enum ChatError: Error {
-    case networkError(Error)
-    case invalidResponse
-    case apiError(String)
-    case decodingError(Error)
-    case unauthorized
-    case rateLimited
-    case unknown
-}
-
-// MARK: - Implementation
 
 class ClaudeAPIService: ChatServiceProtocol {
     private let apiKey: String
@@ -121,13 +66,11 @@ class ClaudeAPIService: ChatServiceProtocol {
         }
     }
     
-    func createConversation(title: String, systemPrompt: String? = nil) -> Conversation {
+    func createConversation(title: String) -> Conversation {
         var conversation = Conversation(title: title)
         
-        if let systemPrompt = systemPrompt {
-            let systemMessage = Message(role: .system, content: systemPrompt)
-            conversation.messages.append(systemMessage)
-        }
+        let systemMessage = Message(role: .system, content: "Welcome to Lumi!")
+        conversation.messages.append(systemMessage)
         
         return conversation
     }
