@@ -27,6 +27,7 @@
 		D4E0E7BB2D6D58E3005CC3C6 /* Lumina.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lumina.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4E0E7CB2D6D58E5005CC3C6 /* LuminaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LuminaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D4E0E7D52D6D58E5005CC3C6 /* LuminaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LuminaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D4E0E7ED2D6D5AEF005CC3C6 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -79,6 +80,7 @@
 				D4E0E7CE2D6D58E5005CC3C6 /* LuminaTests */,
 				D4E0E7D82D6D58E5005CC3C6 /* LuminaUITests */,
 				D4E0E7BC2D6D58E3005CC3C6 /* Products */,
+				D4E0E7ED2D6D5AEF005CC3C6 /* CLAUDE.md */,
 			);
 			sourceTree = "<group>";
 		};
