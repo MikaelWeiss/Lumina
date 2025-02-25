@@ -13,12 +13,26 @@ class ClaudeAPIService: ChatServiceProtocol {
     private let fileManager = FileManager.default
     private let conversationsURL: URL
     
-    init(apiKey: String) {
+    init(apiKey: String, appGroupIdentifier: String = "group.org.weisssolutions.Lumina") {
         self.apiKey = apiKey
         
-        // Set up storage for conversations
-        let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        conversationsURL = documentsDirectory.appendingPathComponent("conversations.json")
+        // Set up storage for conversations in app group's Application Support folder
+        guard let containerURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
+            fatalError("Failed to get app group container URL")
+        }
+        
+        let appSupportURL = containerURL.appendingPathComponent("Library/Application Support", isDirectory: true)
+        
+        // Create directory if it doesn't exist
+        if !fileManager.fileExists(atPath: appSupportURL.path) {
+            do {
+                try fileManager.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
+            } catch {
+                print("Error creating Application Support directory: \(error)")
+            }
+        }
+        
+        conversationsURL = appSupportURL.appendingPathComponent("conversations.json")
     }
     
     func sendMessage(_ message: String, in conversation: Conversation) async throws -> Message {
