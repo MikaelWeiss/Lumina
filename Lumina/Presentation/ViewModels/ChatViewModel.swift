@@ -89,18 +89,17 @@ class ChatViewModel {
         inturrupted = false
         guard !messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
-        let messageToSend = messageText
+        let userMessage = Message(role: .user, content: messageText)
+        currentConversation.messages.append(userMessage)
         messageText = ""
         errorMessage = nil
-        let userMessage = Message(role: .user, content: messageToSend)
-        currentConversation.messages.append(userMessage)
         
         sendMessageTask = Task {
             defer {
                 sendMessageTask = nil
             }
             do {
-                let assistantResponse = try await chatService.sendMessage(messageToSend, in: currentConversation)
+                let assistantResponse = try await chatService.sendMessage(for: currentConversation)
                 currentConversation.messages.append(assistantResponse)
                 try chatService.saveConversation(currentConversation)
             } catch {

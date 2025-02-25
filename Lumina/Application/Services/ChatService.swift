@@ -32,7 +32,7 @@ class ClaudeAPIService: ChatServiceProtocol {
         conversationsURL = appSupportURL.appendingPathComponent("conversations.json")
     }
     
-    func sendMessage(_ message: String, in conversation: Conversation) async throws -> Message {
+    func sendMessage(for conversation: Conversation) async throws -> Message {
         var request = URLRequest(url: baseURL)
         request.httpMethod = "POST"
         request.addValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
@@ -41,7 +41,6 @@ class ClaudeAPIService: ChatServiceProtocol {
         
         // Convert conversation messages to Claude API format
         var conversationMessages = conversation.messages
-        conversationMessages.append(Message(role: .user, content: message))
         let messages = conversationMessages.map { ["role": $0.role.rawValue, "content": $0.content] }
         
         // Prepare request body

@@ -27,9 +27,10 @@ class MockChatService: ChatServiceProtocol {
         conversations = [sampleConversation1, sampleConversation2]
     }
     
-    func sendMessage(_ message: String, in conversation: Conversation) async throws -> Message {
+    func sendMessage(for conversation: Conversation) async throws -> Message {
         // Simulate network delay
         try await Task.sleep(for: .seconds(mockDelay))
+        guard let message = conversation.messages.last?.content else { throw ChatError.missingMessage }
         
         // Create a mock response based on the message content
         let responseContent: String

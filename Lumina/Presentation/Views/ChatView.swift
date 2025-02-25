@@ -20,6 +20,7 @@ struct ChatView: View {
                         LazyVStack(spacing: 12) {
                             ForEach(viewModel.currentConversation.messages) { message in
                                 MessageBubble(message: message)
+                                    .id(message.id)
                             }
                             
                             if viewModel.isLoading {
@@ -38,12 +39,12 @@ struct ChatView: View {
                         .padding(.top, 10)
                         .padding(.bottom, 8)
                     }
+                    .onAppear { scrollToBottom(proxy: proxy) }
                     .onChange(of: viewModel.currentConversation.messages.count) { _, _ in
-                        if let lastMessage = viewModel.currentConversation.messages.last {
-                            withAnimation {
-                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                            }
-                        }
+                        scrollToBottom(proxy: proxy)
+                    }
+                    .onChange(of: viewModel.currentConversation.id) { _, _ in
+                        scrollToBottom(proxy: proxy)
                     }
                     .onChange(of: viewModel.isLoading) { _, _ in
                         if viewModel.isLoading {
@@ -52,15 +53,7 @@ struct ChatView: View {
                             }
                         }
                     }
-                    .onChange(of: viewModel.currentConversation.id) { _, _ in
-                        if let lastMessage = viewModel.currentConversation.messages.last {
-                            withAnimation {
-                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                            }
-                        }
-                    }
                 }
-                .background(Color(UIColor.systemBackground))
                 .overlay(
                     Group {
                         if viewModel.currentConversation.messages.isEmpty {
@@ -103,6 +96,14 @@ struct ChatView: View {
     private func sendMessage() {
         Task {
             await viewModel.didTapSendOrStop()
+        }
+    }
+    
+    private func scrollToBottom(proxy: ScrollViewProxy) {
+        if let lastMessage = viewModel.currentConversation.messages.last {
+            withAnimation {
+                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+            }
         }
     }
 }

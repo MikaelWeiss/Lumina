@@ -55,4 +55,5 @@ enum ChatError: Error {
     case rateLimited
     case unknown
     case conversationNotFound
+    case missingMessage
 }

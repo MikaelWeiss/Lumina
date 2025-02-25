@@ -11,7 +11,7 @@ import Foundation
 
 protocol ChatServiceProtocol {
     /// Send a message to the Claude API and receive a response
-    func sendMessage(_ message: String, in conversation: Conversation) async throws -> Message
+    func sendMessage(for conversation: Conversation) async throws -> Message
     
     /// Create a new conversation
     func createConversation(title: String) -> Conversation
