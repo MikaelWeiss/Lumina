@@ -8,9 +8,7 @@
 import SwiftUI
 
 struct ChatView: View {
-    @State private var messages: [ChatView.Message] = []
-    @State private var newMessage: String = ""
-    @State private var isTyping: Bool = false
+    @State private var viewModel = ChatViewModel(chatService: MockChatService())
     @FocusState private var isInputFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     
@@ -20,11 +18,13 @@ struct ChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(messages) { message in
-                            MessageBubble(message: message)
+                        if let conversation = viewModel.currentConversation {
+                            ForEach(conversation.messages) { message in
+                                MessageBubble(message: message)
+                            }
                         }
                         
-                        if isTyping {
+                        if viewModel.isLoading {
                             TypingIndicator()
                                 .padding(.leading)
                                 .id("typingIndicator")
@@ -34,14 +34,18 @@ struct ChatView: View {
                     .padding(.top, 10)
                     .padding(.bottom, 8)
                 }
-                .onChange(of: messages.count) { _, _ in
-                    withAnimation {
-                        proxy.scrollTo(messages.last?.id ?? "typingIndicator", anchor: .bottom)
+                .onChange(of: viewModel.currentConversation?.messages.count) { _, _ in
+                    if let lastMessage = viewModel.currentConversation?.messages.last {
+                        withAnimation {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
                     }
                 }
-                .onChange(of: isTyping) { _, _ in
-                    withAnimation {
-                        proxy.scrollTo("typingIndicator", anchor: .bottom)
+                .onChange(of: viewModel.isLoading) { _, _ in
+                    if viewModel.isLoading {
+                        withAnimation {
+                            proxy.scrollTo("typingIndicator", anchor: .bottom)
+                        }
                     }
                 }
             }
@@ -51,86 +55,56 @@ struct ChatView: View {
             
             // Input area
             ChatInputView(
-                text: $newMessage,
+                text: $viewModel.messageText,
                 isInputFocused: _isInputFocused,
                 onSend: sendMessage)
         }
         .onAppear {
-            // Add some sample messages for preview
-            if messages.isEmpty {
-                addSampleMessages()
+            if viewModel.currentConversation == nil && !viewModel.conversations.isEmpty {
+                viewModel.selectConversation(viewModel.conversations[0])
+            } else if viewModel.currentConversation == nil {
+                viewModel.createNewConversation()
             }
         }
-        .navigationTitle("Lumina")
+        .navigationTitle(viewModel.currentConversation?.title ?? "Lumina")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("add", systemImage: "plus") {
-                    
+                    viewModel.createNewConversation()
                 }
             }
         }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil), actions: {
+            Button("OK") {
+                viewModel.errorMessage = nil
+            }
+        }, message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+            }
+        })
     }
     
     private func sendMessage() {
-        guard !newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        
-        let userMessage = Message(content: newMessage, isUser: true, timestamp: Date())
-        messages.append(userMessage)
-        newMessage = ""
-        
-        // Simulate AI response
-        isTyping = true
-        
-        // Simulate delay for AI response
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            let aiResponse = Message(
-                content: "This is a simulated response from the AI assistant.",
-                isUser: false,
-                timestamp: Date()
-            )
-            messages.append(aiResponse)
-            isTyping = false
+        Task {
+            await viewModel.sendMessage()
         }
-    }
-    
-    private func addSampleMessages() {
-        let sampleMessages: [Message] = [
-            Message(content: "Hello there!", isUser: true, timestamp: Date().addingTimeInterval(-3600)),
-            Message(content: "Hello! It's nice to meet you. How can I help you today?", isUser: false, timestamp: Date().addingTimeInterval(-3500)),
-        ]
-        
-        messages.append(contentsOf: sampleMessages)
-    }
-    
-    struct Message: Identifiable {
-        let id = UUID().uuidString
-        let content: String
-        let isUser: Bool
-        let timestamp: Date
     }
 }
 
 struct MessageBubble: View {
-    let message: ChatView.Message
+    let message: Message
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if !message.isUser {
-                // Only show the name for AI messages
-                Text("Lumina")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.leading, 4)
-            } else {
-                Text("Mikael")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(.leading, 4)
-            }
+            Text(message.isUserMessage ? "You" : "Lumina")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding(.leading, 4)
             
             HStack {
-                if message.isUser {
+                if message.isUserMessage {
                     Spacer()
                 }
                 
@@ -138,17 +112,17 @@ struct MessageBubble: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(
-                        message.isUser ? 
+                        message.isUserMessage ? 
                             Color.clear : 
                             Color(UIColor.systemGray6)
                     )
                     .cornerRadius(18)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18)
-                            .stroke(message.isUser ? Color.secondary.opacity(0.5) : Color.clear, lineWidth: 1)
+                            .stroke(message.isUserMessage ? Color.secondary.opacity(0.5) : Color.clear, lineWidth: 1)
                     )
                 
-                if !message.isUser {
+                if !message.isUserMessage {
                     Spacer()
                 }
             }
@@ -199,19 +173,14 @@ struct ChatInputView: View {
     
     var body: some View {
         ZStack {
-            // Background for the text field
-            
-            
             // Text input field with dynamic height
             TextField("Reply to Lumina", text: $text, axis: .vertical)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .focused($isInputFocused)
                 .submitLabel(.send)
-                .foregroundColor(.white)
-                .onSubmit {
-                    onSend()
-                }
+                .foregroundColor(.primary)
+                .onSubmit(onSend)
                 .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 20))
         }
         .frame(minHeight: 40)
