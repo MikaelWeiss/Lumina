@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ChatView: View {
-    @State private var viewModel = ChatViewModel(chatService: MockChatService())
+    @State private var viewModel = ChatViewModel(chatService: ClaudeAPIService())
     @FocusState private var isInputFocused: Bool
     @Environment(\.colorScheme) private var colorScheme
     
