@@ -19,6 +19,7 @@ struct ChatView: View {
     @State private var newMessage: String = ""
     @State private var isTyping: Bool = false
     @FocusState private var isInputFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
@@ -54,7 +55,9 @@ struct ChatView: View {
                     }
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color(UIColor.systemBackground))
+            
+            Spacer()
             
             // Input area
             ChatInputView(
@@ -62,6 +65,7 @@ struct ChatView: View {
                 isInputFocused: _isInputFocused,
                 onSend: sendMessage)
         }
+        .preferredColorScheme(.dark)
         .onAppear {
             // Add some sample messages for preview
             if messages.isEmpty {
@@ -94,9 +98,8 @@ struct ChatView: View {
     
     private func addSampleMessages() {
         let sampleMessages: [Message] = [
-            Message(content: "Hello! How can I help you today?", isUser: false, timestamp: Date().addingTimeInterval(-3600)),
-            Message(content: "I'm working on a SwiftUI project and need some help with animations.", isUser: true, timestamp: Date().addingTimeInterval(-3500)),
-            Message(content: "I'd be happy to help with SwiftUI animations! What specific aspect are you struggling with?", isUser: false, timestamp: Date().addingTimeInterval(-3400))
+            Message(content: "Hello there!", isUser: true, timestamp: Date().addingTimeInterval(-3600)),
+            Message(content: "Hello! It's nice to meet you. How can I help you today?", isUser: false, timestamp: Date().addingTimeInterval(-3500)),
         ]
         
         messages.append(contentsOf: sampleMessages)
@@ -106,25 +109,37 @@ struct ChatView: View {
 struct ChatHeader: View {
     var body: some View {
         HStack {
-            Text("AI Assistant")
+            Button(action: {
+                // Back action would go here
+            }) {
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.left")
+                    Text("Chats")
+                }
+                .foregroundColor(Color.orange)
+                .font(.system(size: 18, weight: .medium))
+            }
+            
+            Spacer()
+            
+            // Title - changed to Lumina
+            Text("Lumina")
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundColor(.white)
             
             Spacer()
             
             Button(action: {
-                // Clear chat action would go here
+                // New chat action would go here
             }) {
-                Image(systemName: "trash")
-                    .foregroundColor(.gray)
+                Image(systemName: "plus")
+                    .foregroundColor(Color.orange)
+                    .font(.system(size: 20))
             }
-            .buttonStyle(BorderlessButtonStyle())
         }
-        .padding()
-        .background(
-            Color(.systemBackground)
-                .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-        )
+        .padding(.horizontal)
+        .padding(.vertical, 12)
+        .background(Color(UIColor.systemBackground))
     }
 }
 
@@ -132,35 +147,45 @@ struct MessageBubble: View {
     let message: Message
     
     var body: some View {
-        HStack {
-            if message.isUser {
-                Spacer()
+        VStack(alignment: .leading, spacing: 4) {
+            if !message.isUser {
+                // Only show the name for AI messages
+                Text("Lumina")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 4)
+            } else {
+                Text("Mikael")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 4)
             }
             
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 2) {
+            HStack {
+                if message.isUser {
+                    Spacer()
+                }
+                
                 Text(message.content)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(message.isUser ? Color.blue : Color(.systemGray5))
-                    .foregroundColor(message.isUser ? .white : .primary)
+                    .background(
+                        message.isUser ? 
+                            Color.clear : 
+                            Color(UIColor.systemGray6)
+                    )
+                    .foregroundColor(.white)
                     .cornerRadius(18)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(message.isUser ? Color.gray.opacity(0.5) : Color.clear, lineWidth: 1)
+                    )
                 
-                Text(formatTimestamp(message.timestamp))
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 4)
-            }
-            
-            if !message.isUser {
-                Spacer()
+                if !message.isUser {
+                    Spacer()
+                }
             }
         }
-    }
-    
-    private func formatTimestamp(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }
 
@@ -169,6 +194,10 @@ struct TypingIndicator: View {
     
     var body: some View {
         HStack(spacing: 4) {
+            Image(systemName: "sparkles")
+                .foregroundColor(.orange)
+                .font(.system(size: 16))
+            
             ForEach(0..<3) { index in
                 Circle()
                     .fill(Color.gray.opacity(0.5))
@@ -184,7 +213,7 @@ struct TypingIndicator: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(Color(.systemGray5))
+        .background(Color(UIColor.systemGray6))
         .cornerRadius(18)
         .onAppear {
             animationOffset = 1.0
@@ -202,35 +231,27 @@ struct ChatInputView: View {
     var onSend: () -> Void
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Text input field
-            ZStack {
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color(.systemGray6))
-                
-                TextField("Message", text: $text, axis: .vertical)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .focused($isInputFocused)
-                    .lineLimit(1...5)
-                    .submitLabel(.send)
-                    .onSubmit {
-                        onSend()
-                    }
-            }
-            .frame(minHeight: 40)
+        ZStack {
+            // Background for the text field
             
-            // Send button
-            Button(action: onSend) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 30))
-                    .foregroundColor(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .blue)
-            }
-            .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            
+            // Text input field with dynamic height
+            TextField("Reply to Lumina", text: $text, axis: .vertical)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .focused($isInputFocused)
+                .submitLabel(.send)
+                .foregroundColor(.white)
+                .onSubmit {
+                    onSend()
+                }
+                .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 20))
+                .tint(Color.orange)
         }
+        .frame(minHeight: 40)
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(Color(.systemBackground))
+        .background(Color(UIColor.systemBackground))
     }
 }
 
