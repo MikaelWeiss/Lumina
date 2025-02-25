@@ -7,15 +7,8 @@
 
 import SwiftUI
 
-struct Message: Identifiable {
-    let id = UUID().uuidString
-    let content: String
-    let isUser: Bool
-    let timestamp: Date
-}
-
 struct ChatView: View {
-    @State private var messages: [Message] = []
+    @State private var messages: [ChatView.Message] = []
     @State private var newMessage: String = ""
     @State private var isTyping: Bool = false
     @FocusState private var isInputFocused: Bool
@@ -23,9 +16,6 @@ struct ChatView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Chat header
-            ChatHeader()
-            
             // Messages list
             ScrollViewReader { proxy in
                 ScrollView {
@@ -65,11 +55,19 @@ struct ChatView: View {
                 isInputFocused: _isInputFocused,
                 onSend: sendMessage)
         }
-        .preferredColorScheme(.dark)
         .onAppear {
             // Add some sample messages for preview
             if messages.isEmpty {
                 addSampleMessages()
+            }
+        }
+        .navigationTitle("Lumina")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("add", systemImage: "plus") {
+                    
+                }
             }
         }
     }
@@ -104,47 +102,17 @@ struct ChatView: View {
         
         messages.append(contentsOf: sampleMessages)
     }
-}
-
-struct ChatHeader: View {
-    var body: some View {
-        HStack {
-            Button(action: {
-                // Back action would go here
-            }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.left")
-                    Text("Chats")
-                }
-                .foregroundColor(Color.orange)
-                .font(.system(size: 18, weight: .medium))
-            }
-            
-            Spacer()
-            
-            // Title - changed to Lumina
-            Text("Lumina")
-                .font(.headline)
-                .foregroundColor(.white)
-            
-            Spacer()
-            
-            Button(action: {
-                // New chat action would go here
-            }) {
-                Image(systemName: "plus")
-                    .foregroundColor(Color.orange)
-                    .font(.system(size: 20))
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 12)
-        .background(Color(UIColor.systemBackground))
+    
+    struct Message: Identifiable {
+        let id = UUID().uuidString
+        let content: String
+        let isUser: Bool
+        let timestamp: Date
     }
 }
 
 struct MessageBubble: View {
-    let message: Message
+    let message: ChatView.Message
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -174,11 +142,10 @@ struct MessageBubble: View {
                             Color.clear : 
                             Color(UIColor.systemGray6)
                     )
-                    .foregroundColor(.white)
                     .cornerRadius(18)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18)
-                            .stroke(message.isUser ? Color.gray.opacity(0.5) : Color.clear, lineWidth: 1)
+                            .stroke(message.isUser ? Color.secondary.opacity(0.5) : Color.clear, lineWidth: 1)
                     )
                 
                 if !message.isUser {
@@ -195,12 +162,12 @@ struct TypingIndicator: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "sparkles")
-                .foregroundColor(.orange)
+                .foregroundColor(Color.accentColor)
                 .font(.system(size: 16))
             
             ForEach(0..<3) { index in
                 Circle()
-                    .fill(Color.gray.opacity(0.5))
+                    .fill(Color.secondary.opacity(0.5))
                     .frame(width: 8, height: 8)
                     .offset(y: animationOffset(for: index))
                     .animation(
@@ -246,7 +213,6 @@ struct ChatInputView: View {
                     onSend()
                 }
                 .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 20))
-                .tint(Color.orange)
         }
         .frame(minHeight: 40)
         .padding(.horizontal)
@@ -256,5 +222,7 @@ struct ChatInputView: View {
 }
 
 #Preview {
-    ChatView()
+    NavigationStack {
+        ChatView()
+    }
 }
