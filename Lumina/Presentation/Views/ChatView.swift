@@ -97,10 +97,20 @@ struct ChatView: View {
                 .overlay(
                     Group {
                         if viewModel.currentConversation.messages.isEmpty {
-                            Text("How can I help you today?")
-                                .font(.largeTitle)
-                                .fontDesign(.rounded)
-                                .padding()
+                            VStack(spacing: 16) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 40))
+                                    .foregroundStyle(.secondary)
+                                
+                                Text("How can I help you today?")
+                                    .font(.title)
+                                    .fontWeight(.medium)
+                                    .fontDesign(.rounded)
+                                    .multilineTextAlignment(.center)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(30)
+                            .frame(maxWidth: 300)
                         }
                     }
                 )
