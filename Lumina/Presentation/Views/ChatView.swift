@@ -162,6 +162,7 @@ struct ChatView: View {
                         newConversationTitle = viewModel.currentConversation.title
                         isShowingRenameSheet = true
                     }
+                    .tint(Color.primary)
                 }
             }
             .sheet(isPresented: $isShowingRenameSheet) {
