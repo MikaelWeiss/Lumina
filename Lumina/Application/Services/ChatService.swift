@@ -9,28 +9,6 @@ import Foundation
 
 class ClaudeAPIService: ChatServiceProtocol {
     private let baseURL = URL(string: "https://api.anthropic.com/v1/messages")!
-    private let fileManager = FileManager.default
-    private let conversationsURL: URL
-    
-    init() {
-        // Set up storage for conversations in app group's Application Support folder
-        guard let containerURL = fileManager.containerURL(forSecurityApplicationGroupIdentifier: "group.org.weisssolutions.lumina") else {
-            fatalError("Failed to get app group container URL")
-        }
-        
-        let appSupportURL = containerURL.appendingPathComponent("Library/Application Support", isDirectory: true)
-        
-        // Create directory if it doesn't exist
-        if !fileManager.fileExists(atPath: appSupportURL.path) {
-            do {
-                try fileManager.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
-            } catch {
-                print("Error creating Application Support directory: \(error)")
-            }
-        }
-        
-        conversationsURL = appSupportURL.appendingPathComponent("conversations.json")
-    }
     
     func sendMessage(for conversation: Conversation) async throws -> Message {
         var request = URLRequest(url: baseURL)
@@ -80,45 +58,6 @@ class ClaudeAPIService: ChatServiceProtocol {
     
     func createConversation(title: String) -> Conversation {
         Conversation(title: title)
-    }
-    
-    func saveConversation(_ conversation: Conversation) throws {
-        var conversations = try loadConversations()
-        
-        if let index = conversations.firstIndex(where: { $0.id == conversation.id }) {
-            conversations[index] = conversation
-        } else {
-            conversations.append(conversation)
-        }
-        
-        let data = try JSONEncoder().encode(conversations)
-        try data.write(to: conversationsURL)
-    }
-    
-    func loadConversations() throws -> [Conversation] {
-        guard fileManager.fileExists(atPath: conversationsURL.path) else {
-            return []
-        }
-        
-        let data = try Data(contentsOf: conversationsURL)
-        return try JSONDecoder().decode([Conversation].self, from: data)
-    }
-    
-    func deleteConversation(_ conversation: Conversation) throws {
-        var conversations = try loadConversations()
-        conversations.removeAll(where: { $0.id == conversation.id })
-        
-        let data = try JSONEncoder().encode(conversations)
-        try data.write(to: conversationsURL)
-    }
-    
-    func updateConversationTitle(_ conversation: Conversation, newTitle: String) throws -> Conversation {
-        var updatedConversation = conversation
-        updatedConversation.title = newTitle
-        updatedConversation.updatedAt = Date()
-        
-        try saveConversation(updatedConversation)
-        return updatedConversation
     }
     
     func validateAPIKey() async throws -> Bool {

@@ -7,12 +7,15 @@
 
 import Foundation
 import OSLog
+import SwiftData
 
+@MainActor
 @Observable
 class ChatViewModel {
     // MARK: - Properties
     
     private let chatService: ChatServiceProtocol
+    private let storageManager = StorageManager.shared
     
     var conversations: [Conversation] = []
     var currentConversation: Conversation
@@ -32,29 +35,23 @@ class ChatViewModel {
         self.chatService = chatService
         currentConversation = Conversation()
         loadConversations()
-        currentConversation = conversations.last ?? Conversation()
     }
     
     // MARK: - Conversation Management
     
     func loadConversations() {
-        do {
-            conversations = try chatService.loadConversations()
-        } catch {
-            errorMessage = "Failed to load conversations: \(error.localizedDescription)"
-        }
+        let descriptor = FetchDescriptor<StorageConversation>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        let storageConversations = storageManager.fetch(descriptor)
+        conversations = storageConversations.map { $0.toDomainModel() }
     }
     
     func createNewConversation(title: String = "New Conversation") {
         let conversation = chatService.createConversation(title: title)
         currentConversation = conversation
         
-        do {
-            try chatService.saveConversation(conversation)
-            loadConversations()
-        } catch {
-            errorMessage = "Failed to save new conversation: \(error.localizedDescription)"
-        }
+        let storageConversation = StorageConversation.fromDomainModel(conversation)
+        storageManager.insert(storageConversation)
+        loadConversations()
     }
     
     func selectConversation(_ conversation: Conversation) {
@@ -62,21 +59,34 @@ class ChatViewModel {
     }
     
     func updateConversationTitle(newTitle: String) {
-        do {
-            currentConversation = try chatService.updateConversationTitle(currentConversation, newTitle: newTitle)
+        // Update the current conversation
+        var updatedConversation = currentConversation
+        updatedConversation.title = newTitle
+        updatedConversation.updatedAt = Date()
+        currentConversation = updatedConversation
+        
+        // Update in storage
+        let descriptor = FetchDescriptor<StorageConversation>(
+            predicate: #Predicate { $0.id == updatedConversation.id }
+        )
+        
+        if let storageConversation = storageManager.fetch(descriptor).first {
+            storageConversation.title = newTitle
+            storageConversation.updatedAt = Date()
+            try? storageManager.save()
             loadConversations()
-        } catch {
-            errorMessage = "Failed to update conversation title: \(error.localizedDescription)"
         }
     }
     
     func deleteCurrentConversation() {
-        do {
-            try chatService.deleteConversation(currentConversation)
+        let descriptor = FetchDescriptor<StorageConversation>(
+            predicate: #Predicate { $0.id == currentConversation.id }
+        )
+        
+        if let storageConversation = storageManager.fetch(descriptor).first {
+            storageManager.delete(storageConversation)
             currentConversation = Conversation()
             loadConversations()
-        } catch {
-            errorMessage = "Failed to delete conversation: \(error.localizedDescription)"
         }
     }
     
@@ -86,16 +96,21 @@ class ChatViewModel {
     }
     
     func deleteSwipedConversation() {
-        do {
-            guard let conversationToDelete else { throw ChatError.default }
-            try chatService.deleteConversation(conversationToDelete)
+        guard let conversationToDelete else { return }
+        
+        let descriptor = FetchDescriptor<StorageConversation>(
+            predicate: #Predicate { $0.id == conversationToDelete.id }
+        )
+        
+        if let storageConversation = storageManager.fetch(descriptor).first {
+            storageManager.delete(storageConversation)
             self.conversationToDelete = nil
+            
             if conversationToDelete.id == currentConversation.id {
                 currentConversation = Conversation()
             }
+            
             loadConversations()
-        } catch {
-            errorMessage = "Failed to delete conversation"
         }
     }
     
@@ -115,6 +130,9 @@ class ChatViewModel {
         messageText = ""
         errorMessage = nil
         
+        // Save the updated conversation with the user message
+        saveCurrentConversation()
+        
         sendMessageTask = Task {
             defer {
                 sendMessageTask = nil
@@ -122,7 +140,7 @@ class ChatViewModel {
             do {
                 let assistantResponse = try await chatService.sendMessage(for: currentConversation)
                 currentConversation.messages.append(assistantResponse)
-                try chatService.saveConversation(currentConversation)
+                saveCurrentConversation()
             } catch {
                 if !Task.isCancelled {
                     errorMessage = "Failed to send message: \(error.localizedDescription)"
@@ -140,5 +158,26 @@ class ChatViewModel {
             errorMessage = "API key validation failed: \(error.localizedDescription)"
             return false
         }
+    }
+    
+    // MARK: - Private Helpers
+    
+    private func saveCurrentConversation() {
+        let descriptor = FetchDescriptor<StorageConversation>(
+            predicate: #Predicate { $0.id == currentConversation.id }
+        )
+        
+        if let storageConversation = storageManager.fetch(descriptor).first {
+            // Update existing conversation
+            storageConversation.messages = currentConversation.messages.map { StorageMessage.fromDomainModel($0) }
+            storageConversation.updatedAt = Date()
+        } else {
+            // Create new conversation
+            let storageConversation = StorageConversation.fromDomainModel(currentConversation)
+            storageManager.insert(storageConversation)
+        }
+        
+        try? storageManager.save()
+        loadConversations()
     }
 } 

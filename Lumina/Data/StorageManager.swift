@@ -24,7 +24,7 @@ class StorageManager {
             //#if DEBUG
             //            container = PreviewData.sharedContext()
             //#else
-            container = try ModelContainer(for: StorageConversation.self)
+            container = try ModelContainer(for: StorageConversation.self, StorageMessage.self)
             //#endif
         } catch {
             fatalError("Could not initialize the data model container.")

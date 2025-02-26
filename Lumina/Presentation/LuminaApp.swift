@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct LuminaApp: App {
@@ -13,5 +14,6 @@ struct LuminaApp: App {
         WindowGroup {
             ChatView()
         }
+        .modelContainer(StorageManager.shared.container)
     }
 }
