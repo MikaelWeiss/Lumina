@@ -20,7 +20,9 @@ struct ChatView: View {
                 get: { viewModel.currentConversation.id },
                 set: { newId in
                     if let newId, let conversation = viewModel.conversations.first(where: { $0.id == newId }) {
-                        viewModel.selectConversation(conversation)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            viewModel.selectConversation(conversation)
+                        }
                     }
                 }
             )) { conversation in
@@ -35,12 +37,19 @@ struct ChatView: View {
                     Button("Delete", systemImage: "trash.fill") { viewModel.didTapDelete(conversation) }
                         .tint(Color.red)
                 }
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity).animation(.spring(response: 0.4, dampingFraction: 0.7)),
+                    removal: .scale(scale: 0.6).combined(with: .opacity).animation(.easeOut(duration: 0.25))
+                ))
             }
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.conversations.count)
             .navigationTitle("Conversations")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("add", systemImage: "plus") {
-                        viewModel.createNewConversation()
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            viewModel.createNewConversation()
+                        }
                     }
                 }
             }
@@ -50,7 +59,9 @@ struct ChatView: View {
             .confirmationDialog("Are you sure you want to delete this conversation?", isPresented: $viewModel.showConfirmDeleteConversation) {
                 Button("Cancel", role: .cancel) { }
                 Button("Delete", role: .destructive) {
-                    viewModel.deleteSwipedConversation()
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        viewModel.deleteSwipedConversation()
+                    }
                 }
             }
         } detail: {
@@ -63,22 +74,34 @@ struct ChatView: View {
                             ForEach(viewModel.currentConversation.messages) { message in
                                 MessageBubble(message: message)
                                     .id(message.id)
+                                    .transition(.asymmetric(
+                                        insertion: .scale(scale: 0.9)
+                                            .combined(with: .opacity)
+                                            .combined(with: .offset(y: 20))
+                                            .animation(.spring(response: 0.3, dampingFraction: 0.7)),
+                                        removal: .opacity.animation(.easeOut(duration: 0.2))
+                                    ))
                             }
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.currentConversation.messages.count)
                             
                             if viewModel.isLoading {
                                 TypingIndicator()
                                     .id("typingIndicator")
+                                    .transition(.opacity.combined(with: .scale(scale: 0.9)).animation(.easeInOut(duration: 0.2)))
                             }
                             
                             if viewModel.inturrupted, !viewModel.currentConversation.messages.isEmpty {
                                 Text("Lumina was inturrupted")
                                     .font(.subheadline)
                                     .padding()
+                                    .transition(.opacity.combined(with: .scale(scale: 0.9)).animation(.easeInOut(duration: 0.2)))
                             }
                         }
                         .padding(.horizontal)
                         .padding(.top, 10)
                         .padding(.bottom, 8)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: viewModel.isLoading)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: viewModel.inturrupted)
                     }
                     .scrollDismissesKeyboard(.interactively)
                     .onAppear { scrollToBottom(proxy: proxy) }
@@ -129,7 +152,9 @@ struct ChatView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("add", systemImage: "plus") {
-                        viewModel.createNewConversation()
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            viewModel.createNewConversation()
+                        }
                     }
                 }
                 ToolbarItem(placement: .principal) {
@@ -175,6 +200,7 @@ struct ChatView: View {
                 }
             })
         }
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.currentConversation.id)
     }
     
     private func sendMessage() {
@@ -194,6 +220,7 @@ struct ChatView: View {
 
 struct MessageBubble: View {
     let message: Message
+    @State private var isAnimating = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -220,10 +247,17 @@ struct MessageBubble: View {
                         RoundedRectangle(cornerRadius: 18)
                             .stroke(message.isUserMessage ? Color.secondary.opacity(0.5) : Color.clear, lineWidth: 1)
                     )
+                    .scaleEffect(isAnimating ? 1.0 : 0.9)
+                    .opacity(isAnimating ? 1.0 : 0.5)
                 
                 if !message.isUserMessage {
                     Spacer()
                 }
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                isAnimating = true
             }
         }
     }
