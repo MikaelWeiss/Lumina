@@ -12,7 +12,47 @@ struct ChatView: View {
     @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
-        NavigationStack {
+        NavigationSplitView {
+            // Sidebar with conversation list
+            List(viewModel.conversations.sorted(by: { $0.createdAt > $1.createdAt }), selection: Binding(
+                get: { viewModel.currentConversation.id },
+                set: { newId in
+                    if let newId, let conversation = viewModel.conversations.first(where: { $0.id == newId }) {
+                        viewModel.selectConversation(conversation)
+                    }
+                }
+            )) { conversation in
+                HStack {
+                    Image(systemName: "bubble.left.fill")
+                        .foregroundStyle(.secondary)
+                    Text(conversation.title)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+                .swipeActions {
+                    Button("Delete", systemImage: "trash.fill") { viewModel.didTapDelete(conversation) }
+                        .tint(Color.red)
+                }
+            }
+            .navigationTitle("Conversations")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("add", systemImage: "plus") {
+                        viewModel.createNewConversation()
+                    }
+                }
+            }
+            .onAppear {
+                viewModel.loadConversations()
+            }
+            .confirmationDialog("Are you sure you want to delete this conversation?", isPresented: $viewModel.showConfirmDeleteConversation) {
+                Button("Cancel", role: .cancel) { }
+                Button("Delete", role: .destructive) {
+                    viewModel.deleteSwipedConversation()
+                }
+            }
+        } detail: {
+            // Detail view with chat content
             VStack(spacing: 0) {
                 // Messages list
                 ScrollViewReader { proxy in
@@ -182,7 +222,5 @@ struct TypingIndicator: View {
 }
 
 #Preview {
-    NavigationStack {
-        ChatView()
-    }
+    ChatView()
 }

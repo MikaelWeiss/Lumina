@@ -56,4 +56,5 @@ enum ChatError: Error {
     case unknown
     case conversationNotFound
     case missingMessage
+    case `default`
 }

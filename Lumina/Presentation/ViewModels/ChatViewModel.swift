@@ -23,6 +23,8 @@ class ChatViewModel {
     }
     var errorMessage: String?
     private var sendMessageTask: Task<Void, Error>?
+    var showConfirmDeleteConversation = false
+    private var conversationToDelete: Conversation?
     
     // MARK: - Initialization
     
@@ -75,6 +77,25 @@ class ChatViewModel {
             loadConversations()
         } catch {
             errorMessage = "Failed to delete conversation: \(error.localizedDescription)"
+        }
+    }
+    
+    func didTapDelete(_ conversation: Conversation) {
+        showConfirmDeleteConversation = true
+        conversationToDelete = conversation
+    }
+    
+    func deleteSwipedConversation() {
+        do {
+            guard let conversationToDelete else { throw ChatError.default }
+            try chatService.deleteConversation(conversationToDelete)
+            self.conversationToDelete = nil
+            if conversationToDelete.id == currentConversation.id {
+                currentConversation = Conversation()
+            }
+            loadConversations()
+        } catch {
+            errorMessage = "Failed to delete conversation"
         }
     }
     
