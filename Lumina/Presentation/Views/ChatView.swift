@@ -10,6 +10,8 @@ import SwiftUI
 struct ChatView: View {
     @State private var viewModel = ChatViewModel(chatService: ClaudeAPIService())
     @Environment(\.colorScheme) private var colorScheme
+    @State private var isShowingRenameSheet = false
+    @State private var newConversationTitle = ""
     
     var body: some View {
         NavigationSplitView {
@@ -130,6 +132,38 @@ struct ChatView: View {
                         viewModel.createNewConversation()
                     }
                 }
+                ToolbarItem(placement: .principal) {
+                    Button(viewModel.currentConversation.title) {
+                        newConversationTitle = viewModel.currentConversation.title
+                        isShowingRenameSheet = true
+                    }
+                }
+            }
+            .sheet(isPresented: $isShowingRenameSheet) {
+                VStack(spacing: 20) {
+                    Text("Rename Conversation")
+                        .font(.headline)
+                    
+                    TextField("Conversation Title", text: $newConversationTitle)
+                        .textFieldStyle(.roundedBorder)
+                        .padding(.horizontal)
+                    
+                    HStack {
+                        Button("Cancel") {
+                            isShowingRenameSheet = false
+                        }
+                        .buttonStyle(.bordered)
+                        
+                        Button("Save") {
+                            viewModel.updateConversationTitle(newTitle: newConversationTitle)
+                            isShowingRenameSheet = false
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(newConversationTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+                .padding()
+                .presentationDetents([.height(200)])
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil), actions: {
                 Button("OK") {
