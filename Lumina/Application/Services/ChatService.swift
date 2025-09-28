@@ -13,7 +13,7 @@ class ClaudeAPIService: ChatServiceProtocol {
     func sendMessage(for conversation: Conversation) async throws -> Message {
         var request = URLRequest(url: baseURL)
         request.httpMethod = "POST"
-        request.addValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.addValue("not a valid api key", forHTTPHeaderField: "x-api-key")
         request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.addValue("application/json", forHTTPHeaderField: "content-type")
         
@@ -63,7 +63,7 @@ class ClaudeAPIService: ChatServiceProtocol {
     func validateAPIKey() async throws -> Bool {
         var request = URLRequest(url: baseURL)
         request.httpMethod = "POST"
-        request.addValue("\(apiKey)", forHTTPHeaderField: "x-api-key")
+        request.addValue("not a valid api key", forHTTPHeaderField: "x-api-key")
         request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
         request.addValue("application/json", forHTTPHeaderField: "content-type")
         
