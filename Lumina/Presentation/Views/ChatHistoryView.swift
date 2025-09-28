@@ -1,5 +1,5 @@
 //
-//  ChatView.swift
+//  ChatHistoryView.swift
 //  Lumina
 //
 //  Created by Mikael Weiss on 9/27/25.
@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-struct ChatView: View {
+struct ChatHistoryView: View {
     var body: some View {
         Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
     }
 }
 
 #Preview {
-    ChatView()
+    ChatHistoryView()
 }
