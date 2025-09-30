@@ -18,17 +18,17 @@ struct ChatView: View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
+                    LazyVStack(spacing: 0) {
                         ForEach(conversation.messages) { message in
-                            MessageBubble(message: message)
+                            MessageRow(message: message)
                                 .id(message.id)
                         }
 
                         if isTyping {
-                            TypingIndicator()
+                            TypingIndicatorRow()
                         }
                     }
-                    .padding()
+                    .padding(.vertical, 20)
                 }
                 .onChange(of: conversation.messages.count) { _, _ in
                     if let lastMessage = conversation.messages.last {
@@ -44,8 +44,9 @@ struct ChatView: View {
                 onSend: sendMessage
             )
         }
+        .background(Color(.systemBackground))
         .navigationTitle(conversation.title)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func sendMessage() {
@@ -81,86 +82,149 @@ struct ChatView: View {
     }
 }
 
-struct MessageBubble: View {
-    let message: Message
+// MARK: - Avatar View
+
+struct MessageAvatar: View {
+    let role: MessageRole
 
     var body: some View {
-        HStack {
-            if message.role == .person {
-                Spacer(minLength: 50)
-            }
+        ZStack {
+            Circle()
+                .fill(role == .person ? Color.blue.opacity(0.1) : Color.green.opacity(0.1))
+                .frame(width: 32, height: 32)
 
-            VStack(alignment: message.role == .person ? .trailing : .leading, spacing: 4) {
-                Text(message.text)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        message.role == .person ? Color.blue : Color(.systemGray5),
-                        in: RoundedRectangle(cornerRadius: 18)
-                    )
-                    .foregroundStyle(message.role == .person ? .white : .primary)
+            Image(systemName: role == .person ? "person.fill" : "sparkles")
+                .font(.system(size: 14))
+                .foregroundStyle(role == .person ? .blue : .green)
+                .accessibilityLabel(role == .person ? "User" : "AI Assistant")
+        }
+    }
+}
 
-                Text(message.timestamp, format: .dateTime.hour().minute())
-                    .font(.caption2)
+// MARK: - Message Row
+
+struct MessageRow: View {
+    let message: Message
+    @State private var appeared = false
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            MessageAvatar(role: message.role)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text(message.role == .person ? "You" : "AI")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-            }
 
-            if message.role == .agent {
-                Spacer(minLength: 50)
+                Text(message.text)
+                    .font(.body)
+                    .textSelection(.enabled)
+                    .padding(.horizontal, message.role == .person ? 16 : 0)
+                    .padding(.vertical, message.role == .person ? 12 : 0)
+                    .background(
+                        message.role == .person ?
+                        AnyView(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.blue.opacity(0.1))
+                        ) : AnyView(EmptyView())
+                    )
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: 700, alignment: .leading)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 10)
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.3)) {
+                appeared = true
             }
         }
     }
 }
+
+// MARK: - Message Input
 
 struct MessageInputView: View {
     @Binding var messageText: String
     let onSend: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            TextField("Message", text: $messageText, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(1...5)
-                .onSubmit {
-                    onSend()
-                }
+        VStack(spacing: 0) {
+            Divider()
 
-            Button(action: onSend) {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.secondary : Color.blue)
+            HStack(alignment: .bottom, spacing: 12) {
+                TextField("Message", text: $messageText, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color(.systemGray6))
+                    )
+                    .lineLimit(1...6)
+                    .onSubmit {
+                        onSend()
+                    }
+
+                Button(action: onSend) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(
+                            messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?
+                            Color(.systemGray3) : Color.blue
+                        )
+                }
+                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
         }
-        .padding()
-        .background(.regularMaterial)
+        .background(Color(.systemBackground))
     }
 }
 
-struct TypingIndicator: View {
+// MARK: - Typing Indicator
+
+struct TypingIndicatorRow: View {
     @State private var animationPhase = 0
 
     var body: some View {
-        HStack {
-            HStack(spacing: 4) {
-                ForEach(0..<3, id: \.self) { index in
-                    Circle()
-                        .fill(.secondary)
-                        .frame(width: 8, height: 8)
-                        .scaleEffect(animationPhase == index ? 1.2 : 0.8)
-                        .animation(
-                            .easeInOut(duration: 0.6).repeatForever().delay(Double(index) * 0.2),
-                            value: animationPhase
-                        )
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(Color(.systemGray5), in: RoundedRectangle(cornerRadius: 18))
+        HStack(alignment: .top, spacing: 12) {
+            MessageAvatar(role: .agent)
 
-            Spacer(minLength: 50)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("AI")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 4) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Circle()
+                            .fill(Color(.systemGray3))
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(animationPhase == index ? 1.2 : 0.8)
+                            .animation(
+                                .easeInOut(duration: 0.6).repeatForever().delay(Double(index) * 0.2),
+                                value: animationPhase
+                            )
+                    }
+                }
+                .padding(.vertical, 8)
+            }
+            .frame(maxWidth: 700, alignment: .leading)
+
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
         .onAppear {
             animationPhase = 0
             withAnimation {
