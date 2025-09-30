@@ -13,8 +13,15 @@
 - Use Swift's new macro-based Testing framework for unit tests
 - Group code by feature in the directory structure
 - Use `#Preview` macro for SwiftUI previews
-- Follow MVVM architecture with clear separation between models, views, and view models
 - Use descriptive variable names in camelCase
 - Prefer Swift's strong typing system and avoid force unwrapping
 - Use Swift async/await for error handling and async code
 - Keep functions small and single-purpose
+
+## UI and UX
+- When Building any UI, use context7 to search up the Human Interface Guidelines
+- The UI should be modern and simple
+
+## Thinking
+- Take your time. Don't jump to conclusions.
+
