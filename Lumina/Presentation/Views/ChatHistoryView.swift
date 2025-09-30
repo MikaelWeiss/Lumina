@@ -11,26 +11,22 @@ import SwiftData
 struct ChatHistoryView: View {
     @Query(sort: \Conversation.updatedAt, order: .reverse) private var conversations: [Conversation]
     @Environment(\.modelContext) private var modelContext
+    @Binding var selectedConversation: Conversation?
 
     var body: some View {
-        NavigationStack {
-            List {
-                ForEach(conversations) { conversation in
-                    NavigationLink(value: conversation) {
-                        ConversationRow(conversation: conversation)
-                    }
+        List(selection: $selectedConversation) {
+            ForEach(conversations) { conversation in
+                NavigationLink(value: conversation) {
+                    ConversationRow(conversation: conversation)
                 }
-                .onDelete(perform: deleteConversations)
             }
-            .navigationTitle("Conversations")
-            .navigationDestination(for: Conversation.self) { conversation in
-                ChatView(conversation: conversation)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("New Chat", systemImage: "plus") {
-                        createNewConversation()
-                    }
+            .onDelete(perform: deleteConversations)
+        }
+        .navigationTitle("Conversations")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("New Chat", systemImage: "plus") {
+                    createNewConversation()
                 }
             }
         }
@@ -45,6 +41,7 @@ struct ChatHistoryView: View {
     private func createNewConversation() {
         let newConversation = Conversation()
         modelContext.insert(newConversation)
+        selectedConversation = newConversation
     }
 }
 
@@ -80,6 +77,6 @@ struct ConversationRow: View {
 }
 
 #Preview {
-    ChatHistoryView()
+    ChatHistoryView(selectedConversation: .constant(nil))
         .modelContainer(for: [Conversation.self, Message.self, Provider.self, LLM.self, MessageAttachment.self])
 }

@@ -12,7 +12,7 @@ import SwiftData
 struct LuminaApp: App {
     var body: some Scene {
         WindowGroup {
-            ChatHistoryView()
+            MainView()
         }
         .modelContainer(StorageManager.shared.container)
     }

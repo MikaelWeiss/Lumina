@@ -45,7 +45,7 @@ struct ChatView: View {
             )
         }
         .navigationTitle(conversation.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
     }
 
     private func sendMessage() {
