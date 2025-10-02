@@ -12,6 +12,7 @@ struct ChatHistoryView: View {
     @Query(sort: \Conversation.updatedAt, order: .reverse) private var conversations: [Conversation]
     @Environment(\.modelContext) private var modelContext
     @Binding var selectedConversation: Conversation?
+    @State private var showingSettings = false
 
     var body: some View {
         List(selection: $selectedConversation) {
@@ -25,10 +26,27 @@ struct ChatHistoryView: View {
         .navigationTitle("Conversations")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("New Chat", systemImage: "plus") {
-                    createNewConversation()
+                Button("Settings", systemImage: "gear") {
+                    showingSettings = true
                 }
             }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                createNewConversation()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(Circle().fill(.blue))
+                    .shadow(radius: 4, y: 2)
+            }
+            .padding()
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
         }
     }
 
