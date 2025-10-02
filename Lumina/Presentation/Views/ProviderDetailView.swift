@@ -17,6 +17,8 @@ struct ProviderDetailView: View {
     @State private var showAPIKey = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var fetchedModels = [String]()
+    @State private var isLoadingModels = false
 
     var body: some View {
         Form {
@@ -82,16 +84,26 @@ struct ProviderDetailView: View {
             }
 
             Section {
-                if provider.availableLLMs.isEmpty {
-                    Text("No models configured")
+                if isLoadingModels {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                } else if fetchedModels.isEmpty {
+                    Text("No models available")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(provider.availableLLMs) { llm in
-                        Text(llm.name)
+                    ForEach(fetchedModels, id: \.self) { modelName in
+                        Text(modelName)
                     }
                 }
             } header: {
                 Text("Available Models")
+            } footer: {
+                if !isLoadingModels && !fetchedModels.isEmpty {
+                    Text("Models fetched from provider endpoint")
+                }
             }
         }
         .navigationTitle(provider.name)
@@ -106,6 +118,7 @@ struct ProviderDetailView: View {
         }
         .onAppear {
             loadAPIKey()
+            fetchAvailableModels()
         }
     }
 
@@ -123,6 +136,7 @@ struct ProviderDetailView: View {
     private func saveAPIKey() {
         do {
             try provider.saveAPIKey(apiKey)
+            fetchAvailableModels()
         } catch {
             errorMessage = "Failed to save API key: \(error.localizedDescription)"
             showError = true
@@ -133,9 +147,36 @@ struct ProviderDetailView: View {
         do {
             try provider.deleteAPIKey()
             apiKey = ""
+            fetchedModels = []
         } catch {
             errorMessage = "Failed to remove API key: \(error.localizedDescription)"
             showError = true
+        }
+    }
+
+    private func fetchAvailableModels() {
+        guard provider.hasAPIKey else {
+            fetchedModels = []
+            return
+        }
+
+        isLoadingModels = true
+
+        Task {
+            do {
+                let models = try await ModelService.fetchModels(for: provider)
+                await MainActor.run {
+                    self.fetchedModels = models
+                    self.isLoadingModels = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.fetchedModels = []
+                    self.isLoadingModels = false
+                    self.errorMessage = "Failed to fetch models: \(error.localizedDescription)"
+                    self.showError = true
+                }
+            }
         }
     }
 }
