@@ -45,22 +45,22 @@ class StorageManager {
 
         // Create default providers (sorted by popularity)
         let defaultProviders = [
-            Provider(name: "OpenAI", endpoint: "https://api.openai.com/v1", isCustom: false, sortOrder: 1),
-            Provider(name: "Anthropic", endpoint: "https://api.anthropic.com/v1", isCustom: false, sortOrder: 2),
-            Provider(name: "Groq", endpoint: "https://api.groq.com/openai/v1", isCustom: false, sortOrder: 3),
-            Provider(name: "Google AI", endpoint: "https://generativelanguage.googleapis.com/v1beta", isCustom: false, sortOrder: 4),
-            Provider(name: "z.ai", endpoint: "https://api.z.ai/v1", isCustom: false, sortOrder: 5),
-            Provider(name: "OpenRouter", endpoint: "https://openrouter.ai/api/v1", isCustom: false, sortOrder: 6),
-            Provider(name: "DeepInfra", endpoint: "https://api.deepinfra.com/v1/openai", isCustom: false, sortOrder: 7),
-            Provider(name: "Baseten", endpoint: "https://model.baseten.co/v1", isCustom: false, sortOrder: 8),
-            Provider(name: "Inception Labs", endpoint: "https://api.inceptionlabs.ai/v1", isCustom: false, sortOrder: 9),
-            Provider(name: "Kimi", endpoint: "https://api.moonshot.cn/v1", isCustom: false, sortOrder: 10),
-            Provider(name: "Deepseek", endpoint: "https://api.deepseek.com/v1", isCustom: false, sortOrder: 11),
-            Provider(name: "Alibaba", endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1", isCustom: false, sortOrder: 12),
-            Provider(name: "Perplexity", endpoint: "https://api.perplexity.ai", isCustom: false, sortOrder: 13),
-            Provider(name: "Together AI", endpoint: "https://api.together.xyz/v1", isCustom: false, sortOrder: 14),
-            Provider(name: "Mistral", endpoint: "https://api.mistral.ai/v1", isCustom: false, sortOrder: 15),
-            Provider(name: "Cohere", endpoint: "https://api.cohere.ai/v1", isCustom: false, sortOrder: 16)
+            Provider(name: "OpenAI", endpoint: "https://api.openai.com/v1", apiKeyURL: "https://platform.openai.com/api-keys", sortOrder: 1),
+            Provider(name: "Anthropic", endpoint: "https://api.anthropic.com/v1", apiKeyURL: "https://console.anthropic.com/", sortOrder: 2),
+            Provider(name: "Groq", endpoint: "https://api.groq.com/openai/v1", apiKeyURL: "https://console.groq.com/keys", sortOrder: 3),
+            Provider(name: "Google AI", endpoint: "https://generativelanguage.googleapis.com/v1beta", apiKeyURL: "https://aistudio.google.com/app/apikey", sortOrder: 4),
+            Provider(name: "z.ai", endpoint: "https://api.z.ai/v1", apiKeyURL: "https://z.ai/model-api", sortOrder: 5),
+            Provider(name: "OpenRouter", endpoint: "https://openrouter.ai/api/v1", apiKeyURL: "https://openrouter.ai/settings/keys", sortOrder: 6),
+            Provider(name: "DeepInfra", endpoint: "https://api.deepinfra.com/v1/openai", apiKeyURL: "https://deepinfra.com/", sortOrder: 7),
+            Provider(name: "Baseten", endpoint: "https://model.baseten.co/v1", apiKeyURL: "https://docs.baseten.co/observability/api-keys", sortOrder: 8),
+            Provider(name: "Inception Labs", endpoint: "https://api.inceptionlabs.ai/v1", apiKeyURL: "https://api.inceptionlabs.ai/", sortOrder: 9),
+            Provider(name: "Kimi", endpoint: "https://api.moonshot.cn/v1", apiKeyURL: "https://platform.moonshot.ai/", sortOrder: 10),
+            Provider(name: "Deepseek", endpoint: "https://api.deepseek.com/v1", apiKeyURL: "https://platform.deepseek.com/", sortOrder: 11),
+            Provider(name: "Alibaba", endpoint: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKeyURL: "https://www.alibabacloud.com/help/en/model-studio/first-api-call-to-qwen", sortOrder: 12),
+            Provider(name: "Perplexity", endpoint: "https://api.perplexity.ai", apiKeyURL: "https://www.perplexity.ai/settings/api", sortOrder: 13),
+            Provider(name: "Together AI", endpoint: "https://api.together.xyz/v1", apiKeyURL: "https://api.together.xyz/settings/api-keys", sortOrder: 14),
+            Provider(name: "Mistral", endpoint: "https://api.mistral.ai/v1", apiKeyURL: "https://console.mistral.ai/api-keys/", sortOrder: 15),
+            Provider(name: "Cohere", endpoint: "https://api.cohere.ai/v1", apiKeyURL: "https://dashboard.cohere.com/api-keys", sortOrder: 16)
         ]
 
         for provider in defaultProviders {

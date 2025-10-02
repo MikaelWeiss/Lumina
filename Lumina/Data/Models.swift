@@ -45,16 +45,16 @@ class Provider {
     private(set) var id = UUID()
     var name = ""
     var endpoint = ""
-    var isCustom = false
+    var apiKeyURL: String?
     var sortOrder = 0
 
     @Relationship(deleteRule: .cascade, inverse: \LLM.provider)
     var availableLLMs = [LLM]()
 
-    init(name: String = "", endpoint: String = "", isCustom: Bool = false, sortOrder: Int = 0) {
+    init(name: String = "", endpoint: String = "", apiKeyURL: String? = nil, sortOrder: Int = 0) {
         self.name = name
         self.endpoint = endpoint
-        self.isCustom = isCustom
+        self.apiKeyURL = apiKeyURL
         self.sortOrder = sortOrder
     }
 

@@ -23,7 +23,17 @@ struct ProviderDetailView: View {
             Section {
                 LabeledContent("Name", value: provider.name)
                 LabeledContent("Endpoint", value: provider.endpoint)
-                LabeledContent("Type", value: provider.isCustom ? "Custom" : "Default")
+
+                if let apiKeyURL = provider.apiKeyURL {
+                    Link(destination: URL(string: apiKeyURL)!) {
+                        HStack {
+                            Text("Get API Key")
+                            Spacer()
+                            Image(systemName: "arrow.up.forward.square")
+                                .imageScale(.small)
+                        }
+                    }
+                }
             } header: {
                 Text("Provider Information")
             }
@@ -49,7 +59,7 @@ struct ProviderDetailView: View {
                     }
                 }
 
-                Button("Update API Key") {
+                Button("Save API Key") {
                     saveAPIKey()
                 }
                 .disabled(apiKey.isEmpty)
@@ -65,11 +75,9 @@ struct ProviderDetailView: View {
                 Text("Your API key is stored securely in the iOS Keychain")
             }
 
-            if provider.isCustom {
-                Section {
-                    Button("Edit Provider Details") {
-                        showEditSheet = true
-                    }
+            Section {
+                Button("Edit Provider Details") {
+                    showEditSheet = true
                 }
             }
 
