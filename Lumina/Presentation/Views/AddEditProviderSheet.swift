@@ -107,12 +107,14 @@ struct AddEditProviderSheet: View {
 
     private func saveProvider() {
         do {
+            let savedProvider: Provider
             if let existingProvider = provider {
                 // Update existing provider
                 existingProvider.name = name
                 existingProvider.endpoint = endpoint
                 existingProvider.apiKeyURL = apiKeyURL.isEmpty ? nil : apiKeyURL
                 try existingProvider.saveAPIKey(apiKey)
+                savedProvider = existingProvider
             } else {
                 // Create new provider
                 let newProvider = Provider(
@@ -125,12 +127,37 @@ struct AddEditProviderSheet: View {
                 modelContext.insert(newProvider)
                 try modelContext.save()
                 try newProvider.saveAPIKey(apiKey)
+                savedProvider = newProvider
+            }
+
+            // Fetch available models in the background
+            Task {
+                await fetchModelsForProvider(savedProvider)
             }
 
             dismiss()
         } catch {
             errorMessage = error.localizedDescription
             showError = true
+        }
+    }
+
+    private func fetchModelsForProvider(_ provider: Provider) async {
+        do {
+            let modelNames = try await ModelService.fetchModels(for: provider)
+            await MainActor.run {
+                for modelName in modelNames {
+                    let existingModel = provider.availableLLMs.first { $0.name == modelName }
+                    if existingModel == nil {
+                        let newLLM = LLM(name: modelName, isEnabledForChat: false)
+                        newLLM.provider = provider
+                        provider.availableLLMs.append(newLLM)
+                        modelContext.insert(newLLM)
+                    }
+                }
+            }
+        } catch {
+            // Silently fail - user can manually fetch in ProviderDetailView
         }
     }
 

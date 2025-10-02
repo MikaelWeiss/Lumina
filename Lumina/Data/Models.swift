@@ -87,13 +87,15 @@ class LLM {
     var name = ""
     var inputTypes = [InputType]()
     var outputTypes = [OutputType]()
+    var isEnabledForChat = false
 
     var provider: Provider?
 
-    init(name: String = "", inputTypes: [InputType] = [], outputTypes: [OutputType] = []) {
+    init(name: String = "", inputTypes: [InputType] = [], outputTypes: [OutputType] = [], isEnabledForChat: Bool = false) {
         self.name = name
         self.inputTypes = inputTypes
         self.outputTypes = outputTypes
+        self.isEnabledForChat = isEnabledForChat
     }
 }
 

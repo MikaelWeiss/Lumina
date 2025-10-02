@@ -11,42 +11,89 @@ import SwiftData
 struct ChatView: View {
     let conversation: Conversation
     @Environment(\.modelContext) private var modelContext
+    @Query(filter: #Predicate<LLM> { $0.isEnabledForChat == true }) private var enabledLLMs: [LLM]
     @State private var messageText = ""
     @State private var isTyping = false
+    @State private var showSettings = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(conversation.messages) { message in
-                            MessageRow(message: message)
-                                .id(message.id)
-                        }
-
-                        if isTyping {
-                            TypingIndicatorRow()
-                        }
-                    }
-                    .padding(.vertical, 20)
+        if enabledLLMs.isEmpty {
+            // Show empty state when no models are enabled
+            ContentUnavailableView {
+                Label("No Models Enabled", systemImage: "cpu")
+            } description: {
+                Text("Enable at least one model in Providers to start chatting")
+            } actions: {
+                Button("Open Providers") {
+                    showSettings = true
                 }
-                .onChange(of: conversation.messages.count) { _, _ in
-                    if let lastMessage = conversation.messages.last {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                .buttonStyle(.borderedProminent)
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView()
+            }
+        } else {
+            // Show chat interface with model selector
+            VStack(spacing: 0) {
+                // Model selector
+                Picker("Model", selection: Binding(
+                    get: { conversation.selectedLLM ?? enabledLLMs.first },
+                    set: { newLLM in
+                        conversation.selectedLLM = newLLM
+                        conversation.provider = newLLM?.provider
+                    }
+                )) {
+                    ForEach(enabledLLMs) { llm in
+                        Text("\(llm.provider?.name ?? "Unknown") - \(llm.name)")
+                            .tag(llm as LLM?)
+                    }
+                }
+                .pickerStyle(.menu)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(Color(.systemBackground))
+
+                Divider()
+
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            ForEach(conversation.messages) { message in
+                                MessageRow(message: message)
+                                    .id(message.id)
+                            }
+
+                            if isTyping {
+                                TypingIndicatorRow()
+                            }
+                        }
+                        .padding(.vertical, 20)
+                    }
+                    .onChange(of: conversation.messages.count) { _, _ in
+                        if let lastMessage = conversation.messages.last {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
                         }
                     }
+                }
+
+                MessageInputView(
+                    messageText: $messageText,
+                    onSend: sendMessage
+                )
+            }
+            .background(Color(.systemBackground))
+            .navigationTitle(conversation.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                // Set default model if not already set
+                if conversation.selectedLLM == nil, let firstModel = enabledLLMs.first {
+                    conversation.selectedLLM = firstModel
+                    conversation.provider = firstModel.provider
                 }
             }
-
-            MessageInputView(
-                messageText: $messageText,
-                onSend: sendMessage
-            )
         }
-        .background(Color(.systemBackground))
-        .navigationTitle(conversation.title)
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func sendMessage() {

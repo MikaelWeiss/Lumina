@@ -17,7 +17,6 @@ struct ProviderDetailView: View {
     @State private var showAPIKey = false
     @State private var showError = false
     @State private var errorMessage = ""
-    @State private var fetchedModels = [String]()
     @State private var isLoadingModels = false
 
     var body: some View {
@@ -90,19 +89,22 @@ struct ProviderDetailView: View {
                         ProgressView()
                         Spacer()
                     }
-                } else if fetchedModels.isEmpty {
+                } else if provider.availableLLMs.isEmpty {
                     Text("No models available")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(fetchedModels, id: \.self) { modelName in
-                        Text(modelName)
+                    ForEach(provider.availableLLMs) { llm in
+                        Toggle(llm.name, isOn: Binding(
+                            get: { llm.isEnabledForChat },
+                            set: { llm.isEnabledForChat = $0 }
+                        ))
                     }
                 }
             } header: {
                 Text("Available Models")
             } footer: {
-                if !isLoadingModels && !fetchedModels.isEmpty {
-                    Text("Models fetched from provider endpoint")
+                if !isLoadingModels && !provider.availableLLMs.isEmpty {
+                    Text("Enable models to use them in chat")
                 }
             }
         }
@@ -147,7 +149,12 @@ struct ProviderDetailView: View {
         do {
             try provider.deleteAPIKey()
             apiKey = ""
-            fetchedModels = []
+
+            // Remove all LLM objects for this provider
+            for llm in provider.availableLLMs {
+                modelContext.delete(llm)
+            }
+            provider.availableLLMs.removeAll()
         } catch {
             errorMessage = "Failed to remove API key: \(error.localizedDescription)"
             showError = true
@@ -156,7 +163,6 @@ struct ProviderDetailView: View {
 
     private func fetchAvailableModels() {
         guard provider.hasAPIKey else {
-            fetchedModels = []
             return
         }
 
@@ -164,14 +170,36 @@ struct ProviderDetailView: View {
 
         Task {
             do {
-                let models = try await ModelService.fetchModels(for: provider)
+                let modelNames = try await ModelService.fetchModels(for: provider)
                 await MainActor.run {
-                    self.fetchedModels = models
+                    // Create or update LLM objects
+                    for modelName in modelNames {
+                        // Check if this model already exists for this provider
+                        let existingModel = provider.availableLLMs.first { $0.name == modelName }
+
+                        if existingModel == nil {
+                            // Create new LLM object
+                            let newLLM = LLM(name: modelName, isEnabledForChat: false)
+                            newLLM.provider = provider
+                            provider.availableLLMs.append(newLLM)
+                            modelContext.insert(newLLM)
+                        }
+                    }
+
+                    // Remove models that no longer exist
+                    let currentModelNames = Set(modelNames)
+                    provider.availableLLMs.removeAll { llm in
+                        if !currentModelNames.contains(llm.name) {
+                            modelContext.delete(llm)
+                            return true
+                        }
+                        return false
+                    }
+
                     self.isLoadingModels = false
                 }
             } catch {
                 await MainActor.run {
-                    self.fetchedModels = []
                     self.isLoadingModels = false
                     self.errorMessage = "Failed to fetch models: \(error.localizedDescription)"
                     self.showError = true
