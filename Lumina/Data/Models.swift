@@ -45,13 +45,35 @@ class Provider {
     private(set) var id = UUID()
     var name = ""
     var endpoint = ""
+    var isCustom = false
 
     @Relationship(deleteRule: .cascade, inverse: \LLM.provider)
     var availableLLMs = [LLM]()
 
-    init(name: String = "", endpoint: String = "") {
+    init(name: String = "", endpoint: String = "", isCustom: Bool = false) {
         self.name = name
         self.endpoint = endpoint
+        self.isCustom = isCustom
+    }
+
+    /// Check if this provider has an API key stored in the Keychain
+    var hasAPIKey: Bool {
+        KeychainService.hasAPIKey(for: self.id)
+    }
+
+    /// Get the API key for this provider from the Keychain
+    func getAPIKey() throws -> String? {
+        try KeychainService.getAPIKey(for: self.id)
+    }
+
+    /// Save an API key for this provider to the Keychain
+    func saveAPIKey(_ apiKey: String) throws {
+        try KeychainService.saveAPIKey(apiKey, for: self.id)
+    }
+
+    /// Delete the API key for this provider from the Keychain
+    func deleteAPIKey() throws {
+        try KeychainService.deleteAPIKey(for: self.id)
     }
 }
 
