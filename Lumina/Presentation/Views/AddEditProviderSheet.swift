@@ -166,27 +166,41 @@ struct AddEditProviderSheet: View {
 enum DefaultProviderType: String, CaseIterable, Identifiable {
     case openai
     case anthropic
+    case groq
     case google
+    case zai
+    case openrouter
+    case deepinfra
+    case baseten
+    case inceptionLabs
+    case kimi
+    case deepseek
+    case alibaba
+    case perplexity
+    case together
     case mistral
     case cohere
-    case groq
-    case together
-    case perplexity
-    case openrouter
 
     var id: String { self.rawValue }
 
     var displayName: String {
         switch self {
         case .openai: return "OpenAI"
-        case .anthropic: return "Anthropic (Claude)"
-        case .google: return "Google (Gemini)"
+        case .anthropic: return "Anthropic"
+        case .groq: return "Groq"
+        case .google: return "Google AI"
+        case .zai: return "z.ai"
+        case .openrouter: return "OpenRouter"
+        case .deepinfra: return "DeepInfra"
+        case .baseten: return "Baseten"
+        case .inceptionLabs: return "Inception Labs"
+        case .kimi: return "Kimi"
+        case .deepseek: return "Deepseek"
+        case .alibaba: return "Alibaba"
+        case .perplexity: return "Perplexity"
+        case .together: return "Together AI"
         case .mistral: return "Mistral"
         case .cohere: return "Cohere"
-        case .groq: return "Groq"
-        case .together: return "Together AI"
-        case .perplexity: return "Perplexity"
-        case .openrouter: return "OpenRouter"
         }
     }
 
@@ -194,13 +208,20 @@ enum DefaultProviderType: String, CaseIterable, Identifiable {
         switch self {
         case .openai: return "https://api.openai.com/v1"
         case .anthropic: return "https://api.anthropic.com/v1"
+        case .groq: return "https://api.groq.com/openai/v1"
         case .google: return "https://generativelanguage.googleapis.com/v1beta"
+        case .zai: return "https://api.z.ai/v1"
+        case .openrouter: return "https://openrouter.ai/api/v1"
+        case .deepinfra: return "https://api.deepinfra.com/v1/openai"
+        case .baseten: return "https://model.baseten.co/v1"
+        case .inceptionLabs: return "https://api.inceptionlabs.ai/v1"
+        case .kimi: return "https://api.moonshot.cn/v1"
+        case .deepseek: return "https://api.deepseek.com/v1"
+        case .alibaba: return "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        case .perplexity: return "https://api.perplexity.ai"
+        case .together: return "https://api.together.xyz/v1"
         case .mistral: return "https://api.mistral.ai/v1"
         case .cohere: return "https://api.cohere.ai/v1"
-        case .groq: return "https://api.groq.com/openai/v1"
-        case .together: return "https://api.together.xyz/v1"
-        case .perplexity: return "https://api.perplexity.ai"
-        case .openrouter: return "https://openrouter.ai/api/v1"
         }
     }
 }
