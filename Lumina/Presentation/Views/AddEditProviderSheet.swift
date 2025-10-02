@@ -133,10 +133,10 @@ struct AddEditProviderSheet: View {
                 // Create new provider
                 let newProvider: Provider
                 if isCustom {
-                    newProvider = Provider(name: customName, endpoint: customEndpoint, isCustom: true)
+                    newProvider = Provider(name: customName, endpoint: customEndpoint, isCustom: true, sortOrder: getNextSortOrder())
                 } else {
                     guard let type = selectedProviderType else { return }
-                    newProvider = Provider(name: type.displayName, endpoint: type.endpoint, isCustom: false)
+                    newProvider = Provider(name: type.displayName, endpoint: type.endpoint, isCustom: false, sortOrder: getNextSortOrder())
                 }
 
                 modelContext.insert(newProvider)
@@ -149,6 +149,15 @@ struct AddEditProviderSheet: View {
             errorMessage = error.localizedDescription
             showError = true
         }
+    }
+
+    private func getNextSortOrder() -> Int {
+        let descriptor = FetchDescriptor<Provider>(sortBy: [SortDescriptor(\Provider.sortOrder, order: .reverse)])
+        if let providers = try? modelContext.fetch(descriptor),
+           let maxSortOrder = providers.first?.sortOrder {
+            return maxSortOrder + 1
+        }
+        return 1
     }
 }
 
@@ -164,8 +173,6 @@ enum DefaultProviderType: String, CaseIterable, Identifiable {
     case together
     case perplexity
     case openrouter
-    case ollama
-    case lmstudio
 
     var id: String { self.rawValue }
 
@@ -180,8 +187,6 @@ enum DefaultProviderType: String, CaseIterable, Identifiable {
         case .together: return "Together AI"
         case .perplexity: return "Perplexity"
         case .openrouter: return "OpenRouter"
-        case .ollama: return "Ollama (Local)"
-        case .lmstudio: return "LM Studio (Local)"
         }
     }
 
@@ -196,8 +201,6 @@ enum DefaultProviderType: String, CaseIterable, Identifiable {
         case .together: return "https://api.together.xyz/v1"
         case .perplexity: return "https://api.perplexity.ai"
         case .openrouter: return "https://openrouter.ai/api/v1"
-        case .ollama: return "http://localhost:11434/v1"
-        case .lmstudio: return "http://localhost:1234/v1"
         }
     }
 }

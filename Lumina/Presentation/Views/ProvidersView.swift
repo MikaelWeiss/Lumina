@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 struct ProvidersView: View {
-    @Query private var providers: [Provider]
+    @Query(sort: \Provider.sortOrder) private var providers: [Provider]
     @Environment(\.modelContext) private var modelContext
 
     @State private var showAddSheet = false
@@ -22,9 +22,14 @@ struct ProvidersView: View {
                 }
             }
             .onDelete(perform: deleteProviders)
+            .onMove(perform: moveProviders)
         }
         .navigationTitle("Providers")
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                EditButton()
+            }
+
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Add", systemImage: "plus") {
                     showAddSheet = true
@@ -42,6 +47,16 @@ struct ProvidersView: View {
             // Delete API key from Keychain before deleting provider
             try? provider.deleteAPIKey()
             modelContext.delete(provider)
+        }
+    }
+
+    private func moveProviders(from source: IndexSet, to destination: Int) {
+        var reorderedProviders = providers
+        reorderedProviders.move(fromOffsets: source, toOffset: destination)
+
+        // Update sortOrder for all providers
+        for (index, provider) in reorderedProviders.enumerated() {
+            provider.sortOrder = index + 1
         }
     }
 }

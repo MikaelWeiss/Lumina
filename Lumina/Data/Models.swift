@@ -46,14 +46,16 @@ class Provider {
     var name = ""
     var endpoint = ""
     var isCustom = false
+    var sortOrder = 0
 
     @Relationship(deleteRule: .cascade, inverse: \LLM.provider)
     var availableLLMs = [LLM]()
 
-    init(name: String = "", endpoint: String = "", isCustom: Bool = false) {
+    init(name: String = "", endpoint: String = "", isCustom: Bool = false, sortOrder: Int = 0) {
         self.name = name
         self.endpoint = endpoint
         self.isCustom = isCustom
+        self.sortOrder = sortOrder
     }
 
     /// Check if this provider has an API key stored in the Keychain

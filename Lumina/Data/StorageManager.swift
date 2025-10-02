@@ -43,19 +43,17 @@ class StorageManager {
             return
         }
 
-        // Create default providers
+        // Create default providers (sorted by popularity)
         let defaultProviders = [
-            Provider(name: "OpenAI", endpoint: "https://api.openai.com/v1", isCustom: false),
-            Provider(name: "Anthropic (Claude)", endpoint: "https://api.anthropic.com/v1", isCustom: false),
-            Provider(name: "Google (Gemini)", endpoint: "https://generativelanguage.googleapis.com/v1beta", isCustom: false),
-            Provider(name: "Mistral", endpoint: "https://api.mistral.ai/v1", isCustom: false),
-            Provider(name: "Cohere", endpoint: "https://api.cohere.ai/v1", isCustom: false),
-            Provider(name: "Groq", endpoint: "https://api.groq.com/openai/v1", isCustom: false),
-            Provider(name: "Together AI", endpoint: "https://api.together.xyz/v1", isCustom: false),
-            Provider(name: "Perplexity", endpoint: "https://api.perplexity.ai", isCustom: false),
-            Provider(name: "OpenRouter", endpoint: "https://openrouter.ai/api/v1", isCustom: false),
-            Provider(name: "Ollama (Local)", endpoint: "http://localhost:11434/v1", isCustom: false),
-            Provider(name: "LM Studio (Local)", endpoint: "http://localhost:1234/v1", isCustom: false)
+            Provider(name: "OpenAI", endpoint: "https://api.openai.com/v1", isCustom: false, sortOrder: 1),
+            Provider(name: "Anthropic (Claude)", endpoint: "https://api.anthropic.com/v1", isCustom: false, sortOrder: 2),
+            Provider(name: "Google (Gemini)", endpoint: "https://generativelanguage.googleapis.com/v1beta", isCustom: false, sortOrder: 3),
+            Provider(name: "Groq", endpoint: "https://api.groq.com/openai/v1", isCustom: false, sortOrder: 4),
+            Provider(name: "OpenRouter", endpoint: "https://openrouter.ai/api/v1", isCustom: false, sortOrder: 5),
+            Provider(name: "Perplexity", endpoint: "https://api.perplexity.ai", isCustom: false, sortOrder: 6),
+            Provider(name: "Together AI", endpoint: "https://api.together.xyz/v1", isCustom: false, sortOrder: 7),
+            Provider(name: "Mistral", endpoint: "https://api.mistral.ai/v1", isCustom: false, sortOrder: 8),
+            Provider(name: "Cohere", endpoint: "https://api.cohere.ai/v1", isCustom: false, sortOrder: 9)
         ]
 
         for provider in defaultProviders {
